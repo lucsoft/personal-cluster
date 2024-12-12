@@ -1,0 +1,43 @@
+module App
+
+import "../crds/Application.pkl" as ArgoApp
+
+name = "app"
+
+local app = this
+
+autoSync = true
+
+project = "default"
+
+namespace = "default"
+
+source: ArgoApp.Source
+
+application = new ArgoApp {
+  metadata {
+    name = app.name
+    namespace = "argocd"
+  }
+  spec {
+    syncPolicy {
+      when (app.autoSync == true) {
+        automated {
+          prune = true
+        }
+      }
+      syncOptions {
+        "RespectIgnoreDifferences=true"
+        "ApplyOutOfSyncOnly=true"
+        "AutoCreateNamespace=true"
+      }
+    }
+    project = app.project
+    destination {
+      server = "https://kubernetes.default.svc"
+      namespace = app.namespace
+    }
+    source = app.source
+
+  }
+}
