@@ -1,0 +1,33 @@
+clusterName: hmsys.de
+talosVersion: v1.8.3
+kubernetesVersion: v1.31.4
+endpoint: https://89.58.39.102:6443
+allowSchedulingOnControlPlanes: true
+cniConfig:
+  name: none
+nodes:
+  - hostname: netcup-paid-rs-1000-g9-5
+    ipAddress: 89.58.39.102
+    controlPlane: true
+    installDisk: /dev/vda
+    nodeLabels:
+      topology.kubernetes.io/region: europe-west
+      topology.kubernetes.io/zone: ad-1
+  - hostname: oracle-free-vm-a1-flex-0048
+    ipAddress: 10.0.0.180
+    installDisk: /dev/sda
+    nodeLabels:
+      topology.kubernetes.io/region: europe-west
+      topology.kubernetes.io/zone: ad-2
+patches:
+  - |
+    machine:
+      network:
+        kubespan:
+          enabled: true
+controlPlane:
+  patches:
+    - |
+      cluster:
+        proxy:
+          disabled: true
