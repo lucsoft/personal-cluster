@@ -1,0 +1,32 @@
+amends "../export.pkl"
+import "@k8s/K8sResource.pkl"
+import "@k8s/api/apps/v1/Deployment.pkl"
+import "@k8s/api/core/v1/Service.pkl"
+import "../crds/Application.pkl"
+
+
+resources {
+  new Application {
+    metadata {
+      name = "apps"
+      namespace = "argocd"
+    }
+    spec {
+      syncPolicy {
+        automated {
+
+        }
+      }
+      project = "default"
+      destination {
+        server = "https://kubernetes.default.svc"
+        namespace = "default"
+      }
+      source {
+        repoURL = "https://github.com/argoproj/argocd-example-apps.git"
+        targetRevision = "HEAD"
+        path = "guestbook"
+      }
+    }
+  }
+}

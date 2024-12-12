@@ -1,0 +1,634 @@
+/// This module was generated from the CustomResourceDefinition at
+/// <https://raw.githubusercontent.com/argoproj/argo-cd/v2.7.2/manifests/install.yaml>.
+module io.argoproj.v1alpha1.ApplicationSet
+
+extends "package://pkg.pkl-lang.org/pkl-k8s/k8s@1.0.1#/K8sResource.pkl"
+
+import "package://pkg.pkl-lang.org/pkl-k8s/k8s@1.0.1#/apimachinery/pkg/apis/meta/v1/ObjectMeta.pkl"
+
+fixed apiVersion: "argoproj.io/v1alpha1"
+
+fixed kind: "ApplicationSet"
+
+/// Standard object's metadata.
+///
+/// More info: <https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata>.
+metadata: ObjectMeta?
+
+spec: Spec
+
+status: Status?
+
+class Spec {
+  generators: Listing<Generator>
+
+  goTemplate: Boolean?
+
+  preservedFields: PreservedFields?
+
+  strategy: Strategy?
+
+  syncPolicy: SyncPolicy?
+
+  template: Template
+}
+
+class Generator {
+  clusterDecisionResource: ClusterDecisionResource?
+
+  clusters: Clusters?
+
+  git: Git?
+
+  list: List?
+
+  matrix: Matrix?
+
+  merge: Merge?
+
+  pullRequest: PullRequest?
+
+  scmProvider: ScmProvider?
+
+  selector: Selector?
+}
+
+class ClusterDecisionResource {
+  configMapRef: String
+
+  labelSelector: Selector?
+
+  name: String?
+
+  requeueAfterSeconds: Int?
+
+  template: Template?
+
+  values: Mapping<String, String>?
+}
+
+class Selector {
+  matchExpressions: Listing<MatchExpression>?
+
+  matchLabels: Mapping<String, String>?
+}
+
+class MatchExpression {
+  key: String
+
+  operator: String
+
+  values: Listing<String>?
+}
+
+class Template {
+  metadata: Metadata
+
+  spec: Spec
+}
+
+class Metadata {
+  annotations: Mapping<String, String>?
+
+  finalizers: Listing<String>?
+
+  labels: Mapping<String, String>?
+
+  name: String?
+
+  namespace: String?
+}
+
+class Spec {
+  destination: Destination
+
+  ignoreDifferences: Listing<IgnoreDifference>?
+
+  info: Listing<Env>?
+
+  project: String
+
+  revisionHistoryLimit: Int?
+
+  source: Source?
+
+  sources: Listing<Source>?
+
+  syncPolicy: SyncPolicy?
+}
+
+class Destination {
+  name: String?
+
+  namespace: String?
+
+  server: String?
+}
+
+class IgnoreDifference {
+  group: String?
+
+  jqPathExpressions: Listing<String>?
+
+  jsonPointers: Listing<String>?
+
+  kind: String
+
+  managedFieldsManagers: Listing<String>?
+
+  name: String?
+
+  namespace: String?
+}
+
+class Env {
+  name: String
+
+  value: String
+}
+
+class Source {
+  chart: String?
+
+  directory: Directory?
+
+  helm: Helm?
+
+  kustomize: Kustomize?
+
+  path: String?
+
+  plugin: Plugin?
+
+  ref: String?
+
+  repoURL: String
+
+  targetRevision: String?
+}
+
+class Directory {
+  exclude: String?
+
+  include: String?
+
+  jsonnet: Jsonnet?
+
+  recurse: Boolean?
+}
+
+class Jsonnet {
+  extVars: Listing<Tla>?
+
+  libs: Listing<String>?
+
+  tlas: Listing<Tla>?
+}
+
+class Tla {
+  code: Boolean?
+
+  name: String
+
+  value: String
+}
+
+class Helm {
+  fileParameters: Listing<FileParameter>?
+
+  ignoreMissingValueFiles: Boolean?
+
+  parameters: Listing<Parameter>?
+
+  passCredentials: Boolean?
+
+  releaseName: String?
+
+  skipCrds: Boolean?
+
+  valueFiles: Listing<String>?
+
+  values: String?
+
+  version: String?
+}
+
+class FileParameter {
+  name: String?
+
+  path: String?
+}
+
+class Parameter {
+  forceString: Boolean?
+
+  name: String?
+
+  value: String?
+}
+
+class Kustomize {
+  commonAnnotations: Mapping<String, String>?
+
+  commonAnnotationsEnvsubst: Boolean?
+
+  commonLabels: Mapping<String, String>?
+
+  forceCommonAnnotations: Boolean?
+
+  forceCommonLabels: Boolean?
+
+  images: Listing<String>?
+
+  namePrefix: String?
+
+  nameSuffix: String?
+
+  namespace: String?
+
+  replicas: Listing<Replica>?
+
+  version: String?
+}
+
+class Replica {
+  count: Int|String
+
+  name: String
+}
+
+class Plugin {
+  env: Listing<Env>?
+
+  name: String?
+
+  parameters: Listing<Parameter>?
+}
+
+class Parameter {
+  array: Listing<String>?
+
+  map: Mapping<String, String>?
+
+  name: String?
+
+  string: String?
+}
+
+class SyncPolicy {
+  automated: Automated?
+
+  managedNamespaceMetadata: ManagedNamespaceMetadata?
+
+  retry: Retry?
+
+  syncOptions: Listing<String>?
+}
+
+class Automated {
+  allowEmpty: Boolean?
+
+  prune: Boolean?
+
+  selfHeal: Boolean?
+}
+
+class ManagedNamespaceMetadata {
+  annotations: Mapping<String, String>?
+
+  labels: Mapping<String, String>?
+}
+
+class Retry {
+  backoff: Backoff?
+
+  limit: Int?
+}
+
+class Backoff {
+  duration: String?
+
+  factor: Int?
+
+  maxDuration: String?
+}
+
+class Clusters {
+  selector: Selector?
+
+  template: Template?
+
+  values: Mapping<String, String>?
+}
+
+class Git {
+  directories: Listing<Directory>?
+
+  files: Listing<File>?
+
+  pathParamPrefix: String?
+
+  repoURL: String
+
+  requeueAfterSeconds: Int?
+
+  revision: String
+
+  template: Template?
+}
+
+class Directory {
+  exclude: Boolean?
+
+  path: String
+}
+
+class File {
+  path: String
+}
+
+class List {
+  elements: Listing<Any>
+
+  elementsYaml: String?
+
+  template: Template?
+}
+
+class Matrix {
+  generators: Listing<Generator>
+
+  template: Template?
+}
+
+class Generator {
+  clusterDecisionResource: ClusterDecisionResource?
+
+  clusters: Clusters?
+
+  git: Git?
+
+  list: List?
+
+  matrix: Any?
+
+  merge: Any?
+
+  pullRequest: PullRequest?
+
+  scmProvider: ScmProvider?
+
+  selector: Selector?
+}
+
+class PullRequest {
+  bitbucketServer: BitbucketServer?
+
+  filters: Listing<Filter>?
+
+  gitea: Gitea?
+
+  github: Github?
+
+  gitlab: Gitlab?
+
+  requeueAfterSeconds: Int?
+
+  template: Template?
+}
+
+class BitbucketServer {
+  api: String
+
+  basicAuth: BasicAuth?
+
+  project: String
+
+  repo: String
+}
+
+class BasicAuth {
+  passwordRef: TokenRef
+
+  username: String
+}
+
+class TokenRef {
+  key: String
+
+  secretName: String
+}
+
+class Filter {
+  branchMatch: String?
+}
+
+class Gitea {
+  api: String
+
+  insecure: Boolean?
+
+  owner: String
+
+  repo: String
+
+  tokenRef: TokenRef?
+}
+
+class Github {
+  api: String?
+
+  appSecretName: String?
+
+  labels: Listing<String>?
+
+  owner: String
+
+  repo: String
+
+  tokenRef: TokenRef?
+}
+
+class Gitlab {
+  api: String?
+
+  labels: Listing<String>?
+
+  project: String
+
+  pullRequestState: String?
+
+  tokenRef: TokenRef?
+}
+
+class ScmProvider {
+  azureDevOps: AzureDevOps?
+
+  bitbucket: Bitbucket?
+
+  bitbucketServer: BitbucketServer?
+
+  cloneProtocol: String?
+
+  filters: Listing<Filter>?
+
+  gitea: Gitea?
+
+  github: Github?
+
+  gitlab: Gitlab?
+
+  requeueAfterSeconds: Int?
+
+  template: Template?
+}
+
+class AzureDevOps {
+  accessTokenRef: TokenRef
+
+  allBranches: Boolean?
+
+  api: String?
+
+  organization: String
+
+  teamProject: String
+}
+
+class Bitbucket {
+  allBranches: Boolean?
+
+  appPasswordRef: TokenRef
+
+  owner: String
+
+  user: String
+}
+
+class BitbucketServer {
+  allBranches: Boolean?
+
+  api: String
+
+  basicAuth: BasicAuth?
+
+  project: String
+}
+
+class Filter {
+  branchMatch: String?
+
+  labelMatch: String?
+
+  pathsDoNotExist: Listing<String>?
+
+  pathsExist: Listing<String>?
+
+  repositoryMatch: String?
+}
+
+class Gitea {
+  allBranches: Boolean?
+
+  api: String
+
+  insecure: Boolean?
+
+  owner: String
+
+  tokenRef: TokenRef?
+}
+
+class Github {
+  allBranches: Boolean?
+
+  api: String?
+
+  appSecretName: String?
+
+  organization: String
+
+  tokenRef: TokenRef?
+}
+
+class Gitlab {
+  allBranches: Boolean?
+
+  api: String?
+
+  group: String
+
+  includeSubgroups: Boolean?
+
+  tokenRef: TokenRef?
+}
+
+class Merge {
+  generators: Listing<Generator>
+
+  mergeKeys: Listing<String>
+
+  template: Template?
+}
+
+class PreservedFields {
+  annotations: Listing<String>?
+}
+
+class Strategy {
+  rollingSync: RollingSync?
+
+  type: String?
+}
+
+class RollingSync {
+  steps: Listing<Step>?
+}
+
+class Step {
+  matchExpressions: Listing<MatchExpression>?
+
+  maxUpdate: (Int|String)?
+}
+
+class MatchExpression {
+  key: String?
+
+  operator: String?
+
+  values: Listing<String>?
+}
+
+class SyncPolicy {
+  preserveResourcesOnDeletion: Boolean?
+}
+
+class Status {
+  applicationStatus: Listing<ApplicationStatu>?
+
+  conditions: Listing<Condition>?
+}
+
+class ApplicationStatu {
+  application: String
+
+  lastTransitionTime: String?
+
+  message: String
+
+  status: String
+
+  step: String
+}
+
+class Condition {
+  lastTransitionTime: String?
+
+  message: String
+
+  reason: String
+
+  status: String
+
+  type: String
+}
