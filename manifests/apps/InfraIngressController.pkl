@@ -8,7 +8,7 @@ app = new App {
   source {
     chart = "traefik"
     repoURL = "ghcr.io/traefik/helm"
-    targetRevision = "32.1.0"
+    targetRevision = "33.2.1"
     helm {
       releaseName = "traefik"
       valuesObject {
