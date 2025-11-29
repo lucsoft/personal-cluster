@@ -1,0 +1,33 @@
+import "@k8s/api/apps/v1/Deployment.pkl"
+import "@k8s/api/core/v1/PodSpec.pkl"
+
+name: String
+namespace: String = "default"
+spec: PodSpec
+
+local moduleThis = this
+
+deployment: Deployment = new Deployment {
+  metadata {
+    name = moduleThis.name
+    namespace = moduleThis.namespace
+    labels {
+      ["app"] = moduleThis.name
+    }
+  }
+  spec {
+    selector {
+      matchLabels {
+        ["app"] = moduleThis.name
+      }
+    }
+    template {
+      metadata {
+        labels {
+          ["app"] = moduleThis.name
+        }
+      }
+      spec = moduleThis.spec
+    }
+  }
+}

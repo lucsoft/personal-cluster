@@ -1,0 +1,83 @@
+import "@k8s/api/core/v1/ConfigMap.pkl"
+import "@k8s/api/core/v1/EnvVar.pkl"
+import "@k8s/api/core/v1/PodSpec.pkl"
+import "@k8s/api/core/v1/Volume.pkl"
+import "@k8s/api/core/v1/VolumeMount.pkl"
+
+import "../components/Velocity.pkl"
+
+type: "BUNGEECORD" | "WATERFALL" | "VELOCITY" | "CUSTOM" = "VELOCITY"
+memory: String = "512M"
+iconUrl: String? = null
+jvmOps: Listing<String> = new {}
+pluginUrls: Listing<String> = new {}
+velocity: Velocity = new Velocity {}
+
+local moduleThis = this
+
+fixed podSpec = new PodSpec {
+  securityContext {
+    runAsUser = 1000
+    runAsGroup = 1000
+    fsGroup = 1000
+    runAsNonRoot = true
+    seccompProfile {
+      type = "RuntimeDefault"
+    }
+  }
+  containers {
+    new {
+      name = "mc-proxy"
+      image = "docker.io/itzg/mc-proxy"
+      resources {
+        limits {
+          ["memory"] = moduleThis.memory
+        }
+        requests {
+          ["memory"] = moduleThis.memory
+        }
+      }
+      securityContext {
+        allowPrivilegeEscalation = false
+      }
+      ports {
+        new {
+          name = "mc-proxy"
+          containerPort = 25565
+        }
+      }
+      env {
+        new {
+          name = "TYPE"
+          value = type
+        }
+        new {
+          name = "MEMORY"
+          value = memory
+        }
+        when (iconUrl != null) {
+          new {
+            name = "ICON"
+            value = iconUrl
+          }
+        }
+        when (jvmOps.length > 0) {
+          new {
+            name = "JVM_OPS"
+            value = jvmOps.join(" ")
+          }
+        }
+        when (pluginUrls.length > 0) {
+          new {
+            name = "PLUGINS"
+            value = pluginUrls.join(",")
+          }
+        }
+      }
+    }
+  }
+}
+
+fixed configMapData = new Mapping<String, String> {
+  ["velocity.toml"] = velocity.output.text
+}

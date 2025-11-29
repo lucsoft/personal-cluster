@@ -1,0 +1,77 @@
+import "package://pkg.pkl-lang.org/pkl-pantry/pkl.toml@1.0.2#/toml.pkl"
+
+fixed `config-version`: String = "2.7"
+
+bind: String = "0.0.0.0:25565"
+
+motd: String = "A Minecraft Server"
+
+showMaxPlayers: Number = 500
+
+onlineMode: Boolean = true
+
+preventClientProxyConnections: Boolean = false
+
+playerInfoForwardingMode: "NONE" | "BUNGEECORD" | "LEGACY" | "MODERN" = "NONE"
+
+announceForge: Boolean = false
+
+kickExistingPlayers: Boolean = false
+
+pingPassthrough: "ALL" | "DISABLED" | "MODS" | "DESCRIPTION" = "DISABLED"
+
+samplePlayersInPing: Boolean = false
+
+class Servers {
+  list: Mapping<String, String> = new {}
+  try: Listing<String> = new {}
+}
+
+servers: Servers?
+
+forcedHosts: Mapping<String, Listing<String>> = new {}
+
+query: Dynamic? = null
+
+metrics: Dynamic? = null
+
+advanced: Dynamic? = null
+
+enablePlayerAddressLogging: Boolean = false
+
+forceKeyAuthentication: Boolean = true
+
+output {
+  value = new Mapping<String, Any> {
+    ["config-version"] = `config-version`
+    ["bind"] = bind
+    ["motd"] = motd
+    ["show-max-players"] = showMaxPlayers
+    ["online-mode"] = onlineMode
+    ["prevent-client-proxy-connections"] = preventClientProxyConnections
+    ["player-info-forwarding-mode"] = playerInfoForwardingMode
+    ["announce-forge"] = announceForge
+    ["kick-existing-players"] = kickExistingPlayers
+    ["ping-passthrough"] = pingPassthrough
+    ["sample-players-in-ping"] = samplePlayersInPing
+    when (servers != null && servers.list.length > 0) {
+      ["servers"] = new Mapping<String, Any> {
+        ...servers.list
+        when (servers.try.length > 0) {
+          new {
+            ["try"] = servers.try
+          }
+        }
+      }
+    }
+    when (forcedHosts.length > 0) {
+      ["forced-hosts"] = forcedHosts
+    }
+    when (query != null) { ["query"] = query }
+    when (metrics != null) { ["metrics"] = metrics }
+    when (advanced != null) { ["advanced"] = advanced }
+    ["enable-player-address-logging"] = enablePlayerAddressLogging
+    ["force-key-authentication"] = forceKeyAuthentication
+  }
+  renderer = new toml.Renderer {}
+}
