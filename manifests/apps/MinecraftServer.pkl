@@ -8,11 +8,38 @@ import "../components/McServer.pkl"
 import "../components/Velocity.pkl"
 import "../components/Workload.pkl"
 
+local mcServer = new McServer {
+  eula = true
+  type = "FABRIC"
+  onlineMode = false
+  modrinthProjects {
+    "fabricproxy-lite"
+    "fabric-api"
+  }
+  workload {
+    name = "vanilla-test"
+    namespace = "minecraft"
+  }
+  env {
+    ["FABRIC_PROXY_SECRET"] = mcProxy.workload.name.sha1
+  }
+}
+
 local mcProxy = new McProxy {
   type = "VELOCITY"
+  hostname = "lucsoft.de"
   velocity {
     motd = "A Minecraft Server"
     showMaxPlayers = 20
+    playerInfoForwardingMode = "MODERN"
+    servers {
+      list {
+        ["lobby"] = mcServer.address
+      }
+      try {
+        "lobby"
+      }
+    }
   }
   workload {
     namespace = "minecraft"
@@ -53,4 +80,5 @@ resources {
     }
   }
   ...mcProxy.resources
+  ...mcServer.resources
 }

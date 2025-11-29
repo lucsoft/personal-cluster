@@ -13,7 +13,19 @@ memory: String = "512M"
 iconUrl: String? = null
 jvmOps: Listing<String> = new {}
 pluginUrls: Listing<String> = new {}
-velocity: Velocity = new Velocity {}
+velocity: Velocity = new Velocity {
+  forcedHosts {
+    when (autoForcedHosts) {
+      for (serverName, address in velocity.servers.list.toMap()) {
+        ["\(serverName).\(hostname!!)"] {
+          serverName
+        }
+      }
+    }
+  }
+}
+hostname: String? = null
+autoForcedHosts: Boolean = true
 
 local moduleThis = this
 
@@ -81,6 +93,7 @@ fixed podSpec = new PodSpec {
 }
 
 fixed configMapData = new Mapping<String, String> {
+  ["forwarding.secret"] = workload.name.sha1
   ["velocity.toml"] = velocity.output.text
 }
 
@@ -113,6 +126,11 @@ workload: Workload = new {
               name = "config"
               mountPath = "/config/velocity.toml"
               subPath = "velocity.toml"
+            }
+            new {
+              name = "config"
+              mountPath = "/config/forwarding.secret"
+              subPath = "forwarding.secret"
             }
           }
         }

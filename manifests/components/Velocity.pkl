@@ -55,12 +55,10 @@ output {
     ["ping-passthrough"] = pingPassthrough
     ["sample-players-in-ping"] = samplePlayersInPing
     when (servers != null && servers.list.length > 0) {
-      ["servers"] = new Mapping<String, Any> {
+      ["servers"] = new Mapping<String, String | Listing<String>> {
         ...servers.list
         when (servers.try.length > 0) {
-          new {
-            ["try"] = servers.try
-          }
+          ["try"] = servers.try
         }
       }
     }

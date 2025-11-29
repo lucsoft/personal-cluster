@@ -1,0 +1,145 @@
+module itzg.docker.McServer
+import "@k8s/api/core/v1/PersistentVolumeClaim.pkl"
+import "@k8s/api/core/v1/PodSpec.pkl"
+import "@k8s/api/core/v1/Service.pkl"
+import "@k8s/K8sResource.pkl"
+
+import "../components/Workload.pkl"
+
+eula: Boolean
+
+type: "VANILLA" | "FABRIC" | "FORGE" | "MAGMA" | "PAPER" | "QUILT" = "VANILLA"
+
+onlineMode: Boolean = true
+enforceSecureProfile: Boolean = true
+modrinthProjects: Listing<String> = new {}
+
+local moduleThis = this
+
+env: Mapping<String, String> = new {}
+
+fixed podSpec = new PodSpec {
+  securityContext {
+    runAsUser = 1000
+    runAsGroup = 1000
+    fsGroup = 1000
+    runAsNonRoot = true
+    seccompProfile {
+      type = "RuntimeDefault"
+    }
+  }
+  containers {
+    new {
+      name = "mc-server"
+      image = "docker.io/itzg/minecraft-server"
+      securityContext {
+        allowPrivilegeEscalation = false
+      }
+      ports {
+        new {
+          name = "mc-server"
+          containerPort = 25565
+        }
+      }
+      env {
+        new {
+          name = "EULA"
+          value = eula.toString()
+        }
+        new {
+          name = "TYPE"
+          value = type
+        }
+        new {
+          name = "ONLINE_MODE"
+          value = onlineMode.toString()
+        }
+        new {
+          name = "OVERRIDE_SERVER_PROPERTIES"
+          value = "true"
+        }
+        new {
+          name = "ENFORCE_SECURE_PROFILE"
+          value = enforceSecureProfile.toString()
+        }
+        new {
+          name = "MODRINTH_PROJECTS"
+          value = modrinthProjects.join(",")
+        }
+        for (key, envValue in moduleThis.env) {
+          new {
+            name = key
+            value = envValue
+          }
+        }
+      }
+    }
+  }
+}
+
+workload: Workload = new {
+  name = "minecraft"
+  spec = (podSpec) {
+    volumes {
+      new {
+        name = "storage"
+        persistentVolumeClaim {
+          claimName = "\(workload.name)-data"
+        }
+      }
+    }
+    containers {
+      [0] {
+        volumeMounts {
+          new {
+            name = "storage"
+            mountPath = "/data"
+          }
+        }
+      }
+    }
+  }
+}
+
+service: Service = new {
+  metadata {
+    name = workload.name
+    namespace = workload.namespace
+  }
+  spec {
+    selector {
+      ["app"] = workload.name
+    }
+    ports {
+      new {
+        name = "minecraft"
+        targetPort = "mc-server"
+        port = 25665
+      }
+    }
+  }
+}
+
+fixed address: String =
+  "\(service.metadata.name).\(service.metadata.namespace).svc.cluster.local:25665"
+
+resources: Listing<K8sResource> = new {
+  ...workload.resources
+  service
+  new PersistentVolumeClaim {
+    metadata {
+      name = "\(workload.name)-data"
+      namespace = workload.namespace
+    }
+    spec {
+      accessModes {
+        "ReadWriteOnce"
+      }
+      resources {
+        requests {
+          ["storage"] = "1Gi"
+        }
+      }
+    }
+  }
+}
