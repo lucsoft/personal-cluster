@@ -1,9 +1,11 @@
 import "@k8s/api/apps/v1/Deployment.pkl"
 import "@k8s/api/core/v1/PodSpec.pkl"
+import "@k8s/K8sResource.pkl"
 
 name: String
 namespace: String = "default"
 spec: PodSpec
+type: "Deployment" = "Deployment"
 
 local moduleThis = this
 
@@ -29,5 +31,11 @@ deployment: Deployment = new Deployment {
       }
       spec = moduleThis.spec
     }
+  }
+}
+
+resources: Listing<K8sResource> = new {
+  when (type == "Deployment") {
+    moduleThis.deployment
   }
 }

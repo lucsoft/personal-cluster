@@ -1,10 +1,12 @@
+module itzg.docker.McProxy
+
 import "@k8s/api/core/v1/ConfigMap.pkl"
-import "@k8s/api/core/v1/EnvVar.pkl"
+import "@k8s/api/core/v1/PersistentVolumeClaim.pkl"
 import "@k8s/api/core/v1/PodSpec.pkl"
-import "@k8s/api/core/v1/Volume.pkl"
-import "@k8s/api/core/v1/VolumeMount.pkl"
+import "@k8s/K8sResource.pkl"
 
 import "../components/Velocity.pkl"
+import "../components/Workload.pkl"
 
 type: "BUNGEECORD" | "WATERFALL" | "VELOCITY" | "CUSTOM" = "VELOCITY"
 memory: String = "512M"
@@ -80,4 +82,68 @@ fixed podSpec = new PodSpec {
 
 fixed configMapData = new Mapping<String, String> {
   ["velocity.toml"] = velocity.output.text
+}
+
+workload: Workload = new {
+  name = "minecraft-proxy"
+  spec = (podSpec) {
+    volumes {
+      new {
+        name = "storage"
+        persistentVolumeClaim {
+          claimName = "\(workload.name)-data"
+        }
+      }
+      new {
+        name = "config"
+        configMap {
+          name = "\(workload.name)-config"
+        }
+      }
+    }
+    containers {
+      [0] {
+        volumeMounts {
+          new {
+            name = "storage"
+            mountPath = "/server"
+          }
+          when (type == "VELOCITY") {
+            new {
+              name = "config"
+              mountPath = "/config/velocity.toml"
+              subPath = "velocity.toml"
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+resources: Listing<K8sResource> = new {
+  ...workload.resources
+  new ConfigMap {
+    metadata {
+      name = "\(workload.name)-config"
+      namespace = workload.namespace
+    }
+    data = configMapData
+  }
+  new PersistentVolumeClaim {
+    metadata {
+      name = "\(workload.name)-data"
+      namespace = workload.namespace
+    }
+    spec {
+      accessModes {
+        "ReadWriteOnce"
+      }
+      resources {
+        requests {
+          ["storage"] = "1Gi"
+        }
+      }
+    }
+  }
 }

@@ -4,6 +4,7 @@ import "@k8s/api/core/v1/Namespace.pkl"
 import "@k8s/api/core/v1/PersistentVolumeClaim.pkl"
 
 import "../components/McProxy.pkl"
+import "../components/McServer.pkl"
 import "../components/Velocity.pkl"
 import "../components/Workload.pkl"
 
@@ -12,6 +13,33 @@ local mcProxy = new McProxy {
   velocity {
     motd = "A Minecraft Server"
     showMaxPlayers = 20
+  }
+  workload {
+    namespace = "minecraft"
+    deployment {
+      spec {
+        strategy {
+          type = "Recreate"
+        }
+      }
+    }
+    spec {
+      containers {
+        [0] {
+          env {
+            new {
+              name = "CONFIGMAP_HASH"
+              value = "\(mcProxy.velocity.output.text.sha1)"
+            }
+          }
+          ports {
+            [0] {
+              hostPort = 25565
+            }
+          }
+        }
+      }
+    }
   }
 }
 
@@ -24,80 +52,5 @@ resources {
       }
     }
   }
-  new ConfigMap {
-    metadata {
-      name = "minecraft-proxy-velocity-config"
-      namespace = "minecraft"
-    }
-    data = mcProxy.configMapData
-  }
-  new PersistentVolumeClaim {
-    metadata {
-      name = "minecraft-proxy-data"
-      namespace = "minecraft"
-    }
-    spec {
-      accessModes {
-        "ReadWriteOnce"
-      }
-      resources {
-        requests {
-          ["storage"] = "1Gi"
-        }
-      }
-    }
-  }
-  new Workload {
-    name = "minecraft-proxy"
-    namespace = "minecraft"
-    deployment {
-      spec {
-        strategy {
-          type = "Recreate"
-        }
-      }
-    }
-    spec = (mcProxy.podSpec) {
-      volumes {
-        new {
-          name = "storage"
-          persistentVolumeClaim {
-            claimName = "minecraft-proxy-data"
-          }
-        }
-        new {
-          name = "config"
-          configMap {
-            name = "minecraft-proxy-velocity-config"
-          }
-        }
-      }
-      containers {
-        [0] {
-          ports {
-            [0] {
-              hostPort = 25565
-            }
-          }
-          env {
-            new {
-              name = "CONFIGMAP_HASH"
-              value = "\(mcProxy.velocity.output.text.sha1)"
-            }
-          }
-          volumeMounts {
-            new {
-              name = "storage"
-              mountPath = "/server"
-            }
-            new {
-              name = "config"
-              mountPath = "/config/velocity.toml"
-              subPath = "velocity.toml"
-            }
-          }
-        }
-      }
-    }
-  }.deployment
+  ...mcProxy.resources
 }
