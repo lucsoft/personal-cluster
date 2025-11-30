@@ -3,46 +3,58 @@ import "@k8s/api/core/v1/ConfigMap.pkl"
 import "@k8s/api/core/v1/Namespace.pkl"
 import "@k8s/api/core/v1/PersistentVolumeClaim.pkl"
 
+import "../components/AutoServer.pkl"
 import "../components/McProxy.pkl"
+import "../components/McRouter.pkl"
 import "../components/McServer.pkl"
 import "../components/Velocity.pkl"
 import "../components/Workload.pkl"
 
-local mcServer = new McServer {
-  eula = true
-  type = "FABRIC"
-  onlineMode = false
-  modrinthProjects {
-    "fabricproxy-lite"
-    "fabric-api"
+local mcServers: Listing<McServer> = new {
+  new {
+    eula = true
+    type = "VANILLA"
+    workload {
+      name = "main"
+      namespace = "minecraft"
+    }
   }
-  workload {
-    name = "vanilla-test"
-    namespace = "minecraft"
+  new {
+    type = "AUTO_CURSEFORGE"
+    eula = true
+    workload {
+      name = "atm10"
+      namespace = "minecraft"
+    }
+    motd = "Running: All The Mods 10"
+    memory = 8.gb
+    modpackSlug = "all-the-mods-10"
+    curseforgeApiKey = read("../cfapikey.txt").text
+    curseforgeProjects {
+      "distant-horizons"
+      "bluemap"
+      "chunky-pregenerator-forge"
+      "ftb-chunks-for-bluemap"
+      "minecolonies-bluemap-integration"
+    }
   }
-  env {
-    ["FABRIC_PROXY_SECRET"] = mcProxy.workload.name.sha1
+  new {
+    eula = true
+    type = "FABRIC"
+    modrinthProjects {
+      "create-fly:1.21.10-6.0.8-4"
+      "distanthorizons:2.3.6-b-1.21.10"
+    }
+    motd = "Running: Create Mod"
+    workload {
+      name = "vanilla-create"
+      namespace = "minecraft"
+    }
   }
 }
 
-local mcProxy = new McProxy {
-  type = "VELOCITY"
-  hostname = "lucsoft.de"
-  velocity {
-    motd = "A Minecraft Server"
-    showMaxPlayers = 20
-    playerInfoForwardingMode = "MODERN"
-    servers {
-      list {
-        ["lobby"] = mcServer.address
-      }
-      try {
-        "lobby"
-      }
-    }
-  }
+local mcRouter = new McRouter {
   workload {
-    namespace = "minecraft"
     deployment {
       spec {
         strategy {
@@ -50,22 +62,11 @@ local mcProxy = new McProxy {
         }
       }
     }
-    spec {
-      containers {
-        [0] {
-          env {
-            new {
-              name = "CONFIGMAP_HASH"
-              value = "\(mcProxy.velocity.output.text.sha1)"
-            }
-          }
-          ports {
-            [0] {
-              hostPort = 25565
-            }
-          }
-        }
-      }
+    namespace = "minecraft"
+  }
+  servers {
+    for (server in mcServers) {
+      [server.workload.name + ".lucsoft.de"] = server.address
     }
   }
 }
@@ -79,6 +80,8 @@ resources {
       }
     }
   }
-  ...mcProxy.resources
-  ...mcServer.resources
+  ...mcRouter.resources
+  for (mcServer in mcServers) {
+    ...mcServer.resources
+  }
 }

@@ -1,0 +1,50 @@
+module itzg.docker.McRouter
+
+import "@k8s/api/core/v1/PodSpec.pkl"
+import "@k8s/K8sResource.pkl"
+
+import "../components/Workload.pkl"
+
+servers: Mapping<String, String> = new {}
+
+local moduleThis = this
+
+fixed podSpec = new PodSpec {
+  securityContext {
+    runAsUser = 1000
+    runAsGroup = 1000
+    fsGroup = 1000
+    seccompProfile {
+      type = "RuntimeDefault"
+    }
+  }
+  containers {
+    new {
+      name = "mc-proxy"
+      image = "docker.io/itzg/mc-router"
+      ports {
+        new {
+          name = "mc-proxy"
+          hostPort = 25565
+          containerPort = 25565
+        }
+      }
+      env {
+        new {
+          name = "MAPPING"
+          value =
+            servers.toMap().entries.map((element) -> "\(element.key)=\(element.value)").join("\n")
+        }
+      }
+    }
+  }
+}
+
+workload: Workload = new {
+  name = "minecraft-router"
+  spec = (podSpec) {}
+}
+
+resources: Listing<K8sResource> = new {
+  ...workload.resources
+}

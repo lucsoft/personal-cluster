@@ -34,7 +34,6 @@ fixed podSpec = new PodSpec {
     runAsUser = 1000
     runAsGroup = 1000
     fsGroup = 1000
-    runAsNonRoot = true
     seccompProfile {
       type = "RuntimeDefault"
     }
@@ -53,6 +52,7 @@ fixed podSpec = new PodSpec {
       }
       securityContext {
         allowPrivilegeEscalation = false
+        runAsNonRoot = true
       }
       ports {
         new {
@@ -92,9 +92,22 @@ fixed podSpec = new PodSpec {
   }
 }
 
-fixed configMapData = new Mapping<String, String> {
-  ["forwarding.secret"] = workload.name.sha1
-  ["velocity.toml"] = velocity.output.text
+class ConfigFile {
+  path: String
+  content: String
+}
+
+configFiles: Listing<ConfigFile> = new {
+  when (type == "VELOCITY") {
+    new ConfigFile {
+      path = "/config/velocity.toml"
+      content = velocity.output.text
+    }
+    new ConfigFile {
+      path = "/config/forwarding.secret"
+      content = workload.name.sha1
+    }
+  }
 }
 
 workload: Workload = new {
@@ -121,16 +134,11 @@ workload: Workload = new {
             name = "storage"
             mountPath = "/server"
           }
-          when (type == "VELOCITY") {
+          for (configFile in configFiles) {
             new {
               name = "config"
-              mountPath = "/config/velocity.toml"
-              subPath = "velocity.toml"
-            }
-            new {
-              name = "config"
-              mountPath = "/config/forwarding.secret"
-              subPath = "forwarding.secret"
+              mountPath = configFile.path
+              subPath = configFile.path.sha1
             }
           }
         }
@@ -146,7 +154,11 @@ resources: Listing<K8sResource> = new {
       name = "\(workload.name)-config"
       namespace = workload.namespace
     }
-    data = configMapData
+    data {
+      for (file in configFiles) {
+        [file.path.sha1] = file.content
+      }
+    }
   }
   new PersistentVolumeClaim {
     metadata {

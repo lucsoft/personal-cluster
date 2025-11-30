@@ -1,11 +1,16 @@
 import "@k8s/api/apps/v1/Deployment.pkl"
 import "@k8s/api/core/v1/PodSpec.pkl"
+import "@k8s/api/core/v1/ServiceAccount.pkl"
+import "@k8s/api/rbac/v1/PolicyRule.pkl"
+import "@k8s/api/rbac/v1/Role.pkl"
+import "@k8s/api/rbac/v1/RoleBinding.pkl"
 import "@k8s/K8sResource.pkl"
 
 name: String
 namespace: String = "default"
 spec: PodSpec
 type: "Deployment" = "Deployment"
+useServiceAccount: Boolean = false
 
 local moduleThis = this
 
@@ -29,13 +34,61 @@ deployment: Deployment = new Deployment {
           ["app"] = moduleThis.name
         }
       }
-      spec = moduleThis.spec
+      spec = (moduleThis.spec) {
+        automountServiceAccountToken = useServiceAccount
+        when (useServiceAccount) {
+          serviceAccountName = moduleThis.name
+        }
+      }
     }
   }
 }
 
+class RuleDefinition {
+  name: String
+  namespace: String
+  rules: Listing<PolicyRule> = new {}
+}
+
+policies: Listing<RuleDefinition> = new {}
+
+serviceAccount: ServiceAccount = new ServiceAccount {
+  metadata {
+    name = moduleThis.name
+    namespace = moduleThis.namespace
+  }
+}
+
 resources: Listing<K8sResource> = new {
+  serviceAccount
   when (type == "Deployment") {
     moduleThis.deployment
+  }
+  for (roleDefinition in policies) {
+    new Role {
+      metadata {
+        name = roleDefinition.name
+        namespace = roleDefinition.namespace
+      }
+      rules = roleDefinition.rules
+    }
+    new RoleBinding {
+      metadata {
+        name = roleDefinition.name
+        namespace = roleDefinition.namespace
+      }
+      subjects {
+        new {
+          kind = "ServiceAccount"
+          name = moduleThis.name
+          namespace = moduleThis.namespace
+        }
+      }
+      roleRef {
+        kind = "Role"
+        name = roleDefinition.name
+        apiGroup = "rbac.authorization.k8s.io"
+      }
+    }
   }
 }

@@ -8,11 +8,17 @@ import "../components/Workload.pkl"
 
 eula: Boolean
 
-type: "VANILLA" | "FABRIC" | "FORGE" | "MAGMA" | "PAPER" | "QUILT" = "VANILLA"
+type: "VANILLA" | "FABRIC" | "FORGE" | "MAGMA" | "PAPER" | "QUILT" | "AUTO_CURSEFORGE" = "VANILLA"
 
 onlineMode: Boolean = true
 enforceSecureProfile: Boolean = true
+autostop: Boolean = false
 modrinthProjects: Listing<String> = new {}
+modpackSlug: String? = null
+curseforgeProjects: Listing<String> = new {}
+curseforgeApiKey: String? = null
+memory: DataSize = 2.gb
+motd: String? = null
 
 local moduleThis = this
 
@@ -41,6 +47,11 @@ fixed podSpec = new PodSpec {
           containerPort = 25565
         }
       }
+      resources {
+        requests {
+          ["memory"] = "\(memory.toUnit("mb").value)M"
+        }
+      }
       env {
         new {
           name = "EULA"
@@ -63,8 +74,32 @@ fixed podSpec = new PodSpec {
           value = enforceSecureProfile.toString()
         }
         new {
+          name = "MEMORY"
+          value = "\(memory.toUnit("mb").value)M"
+        }
+        new {
           name = "MODRINTH_PROJECTS"
           value = modrinthProjects.join(",")
+        }
+        when (motd != null) {
+          new {
+            name = "MOTD"
+            value = motd
+          }
+        }
+        when (type == "AUTO_CURSEFORGE") {
+          new {
+            name = "CF_SLUG"
+            value = modpackSlug!!
+          }
+          new {
+            name = "CF_API_KEY"
+            value = curseforgeApiKey!!
+          }
+          new {
+            name = "CURSEFORGE_PROJECTS"
+            value = curseforgeProjects.join(",")
+          }
         }
         for (key, envValue in moduleThis.env) {
           new {
@@ -122,6 +157,8 @@ service: Service = new {
 
 fixed address: String =
   "\(service.metadata.name).\(service.metadata.namespace).svc.cluster.local:25665"
+
+diskSize = "1Gi"
 
 resources: Listing<K8sResource> = new {
   ...workload.resources

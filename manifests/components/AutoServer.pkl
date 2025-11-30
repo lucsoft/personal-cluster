@@ -1,0 +1,14 @@
+import "package://pkg.pkl-lang.org/pkl-pantry/pkl.toml@1.0.2#/toml.pkl"
+
+class Server {
+  start: String?
+  stop: String?
+  startupDelay: Number?
+  autoShutdownDelay: Number?
+}
+
+servers: Mapping<String, Server> = new {}
+
+output {
+  renderer = new toml.Renderer {}
+}
