@@ -25,7 +25,6 @@ fixed podSpec = new PodSpec {
       ports {
         new {
           name = "mc-proxy"
-          hostPort = 25565
           containerPort = 25565
         }
       }
@@ -42,7 +41,17 @@ fixed podSpec = new PodSpec {
 
 workload: Workload = new {
   name = "minecraft-router"
-  spec = (podSpec) {}
+  spec = (podSpec) {
+    containers {
+      [0] {
+        ports {
+          [0] {
+            hostPort = 25565
+          }
+        }
+      }
+    }
+  }
 }
 
 resources: Listing<K8sResource> = new {

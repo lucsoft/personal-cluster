@@ -1,14 +1,7 @@
-import "@k8s/api/apps/v1/Deployment.pkl"
-import "@k8s/api/core/v1/ConfigMap.pkl"
 import "@k8s/api/core/v1/Namespace.pkl"
-import "@k8s/api/core/v1/PersistentVolumeClaim.pkl"
 
-import "../components/AutoServer.pkl"
-import "../components/McProxy.pkl"
 import "../components/McRouter.pkl"
 import "../components/McServer.pkl"
-import "../components/Velocity.pkl"
-import "../components/Workload.pkl"
 
 local mcServers: Listing<McServer> = new {
   new {
